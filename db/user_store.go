@@ -5,14 +5,14 @@ import (
 
 	"github.com/fulltimegodev/hotel-reservation/types"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
-
 
 const userColl = "users"
 
 type UserStore interface {
-	GetUserByID(context.Context, string) (types.User, error)
+	GetUserByID(context.Context, string) (*types.User, error)
 }
 
 type MongoUserStore struct {
@@ -28,9 +28,13 @@ func NewMongoUserStore(client *mongo.Client) *MongoUserStore {
 }
 
 func (s *MongoUserStore) GetUserByID(ctx context.Context, id string) (*types.User, error) {
-	var user types.User
-	if err := s.coll.FindOne(ctx, bson.M{"_id": }).Decode(&user); err != nil {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
 		return nil, err
 	}
-	return &user,nil
+	var user types.User
+	if err := s.coll.FindOne(ctx, bson.M{"_id": oid}).Decode(&user); err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
